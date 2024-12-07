@@ -26,38 +26,51 @@ load_dotenv()
 
 class AudioPlayer:
     def __init__(self):
-        pygame.mixer.init()
-        
+        if not self.is_cloud_environment():
+            pygame.mixer.init()
+        else:
+            logger.info("Audio playback disabled in Streamlit Cloud.")
+
+    def is_cloud_environment(self) -> bool:
+        """Check if the app is running on Streamlit Cloud."""
+        return os.getenv("STREAMLIT_CLOUD") is not None
+
     def generate_speech(self, text: str, lang: str = 'en') -> str:
         """Generate speech from text and save it as a temporary MP3 file."""
         try:
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
-            tts = gTTS(text=text, lang=lang, tld='us')  # You can change the TLD if necessary
+            tts = gTTS(text=text, lang=lang, tld='us')  # You can change the TLD if needed
             tts.save(temp_file.name)
+            logger.info(f"Generated speech audio: {temp_file.name}")
             return temp_file.name
         except Exception as e:
             logger.error(f"Error generating speech: {str(e)}")
             raise ValueError(f"Failed to generate speech audio: {str(e)}")
 
     def play_audio(self, file_path: str):
-        """Play the generated audio file."""
+        """Play the generated audio file (local only)."""
+        if self.is_cloud_environment():
+            logger.info("Audio playback is not supported in the cloud.")
+            return
+
         try:
-            pygame.mixer.init()  # Ensure pygame mixer is initialized
+            pygame.mixer.init()  # Ensure mixer is initialized
             pygame.mixer.music.load(file_path)
             pygame.mixer.music.play()
-            
+
             while pygame.mixer.music.get_busy():
                 time.sleep(0.1)
         except Exception as e:
             logger.error(f"Error playing audio: {str(e)}")
             raise ValueError(f"Failed to play audio: {str(e)}")
         finally:
-            pygame.mixer.music.unload()  # Unload music after playing to free resources
+            pygame.mixer.music.unload()  # Unload music to free resources
 
     def cleanup(self, file_path: str):
         """Clean up the temporary audio file."""
         try:
-            os.unlink(file_path)  # Delete the file after use
+            os.unlink(file_path)
+            logger.info(f"Cleaned up audio file: {file_path}")
         except Exception as e:
             logger.error(f"Error cleaning up audio file: {str(e)}")
             raise ValueError(f"Error cleaning up audio file: {str(e)}")
