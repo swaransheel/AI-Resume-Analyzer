@@ -11,6 +11,4 @@ gTTS>=2.4.0
 plotly>=5.0.0
 typing-extensions>=4.5.0
 protobuf>=4.25.1
-scikit-learn>=1.0.0
-keybert
 google-cloud-texttospeech
